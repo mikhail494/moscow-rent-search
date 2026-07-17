@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Moscow Rent Search</title>
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"
+    >
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+</head>
+<body>
+    <main class="app-shell">
+        <aside class="filters-panel" aria-labelledby="filters-title">
+            <div class="brand-block">
+                <p class="eyebrow">Москва</p>
+                <h1 id="filters-title">Поиск аренды</h1>
+            </div>
+
+            <form class="filters-form" id="filters-form" novalidate>
+                <fieldset class="source-switch">
+                    <legend>Источник</legend>
+                    <div class="source-options">
+                        <label class="source-option" for="source-test">
+                            <input id="source-test" name="source" type="radio" value="test" checked>
+                            <span>Тестовые данные</span>
+                        </label>
+                        <label class="source-option" for="source-cian">
+                            <input id="source-cian" name="source" type="radio" value="cian">
+                            <span>ЦИАН</span>
+                        </label>
+                        <label class="source-option" for="source-yandex-realty">
+                            <input id="source-yandex-realty" name="source" type="radio" value="yandex_realty">
+                            <span>Яндекс Недвижимость</span>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="field-group">
+                    <legend>Тип квартиры</legend>
+                    <label class="check-row" for="studio">
+                        <input id="studio" name="flat_type" type="checkbox" value="studio" checked>
+                        <span>Студия</span>
+                    </label>
+                    <label class="check-row" for="one-room">
+                        <input id="one-room" name="flat_type" type="checkbox" value="one_room" checked>
+                        <span>Однокомнатная квартира</span>
+                    </label>
+                </fieldset>
+
+                <div class="field-grid">
+                    <label class="field" for="min-area">
+                        <span>Минимальная площадь</span>
+                        <input id="min-area" name="min_area" type="number" min="0" step="1" inputmode="numeric" value="18" placeholder="м2">
+                    </label>
+
+                    <label class="field" for="max-area">
+                        <span>Максимальная площадь</span>
+                        <input id="max-area" name="max_area" type="number" min="0" step="1" inputmode="numeric" value="50" placeholder="м2">
+                    </label>
+                </div>
+
+                <label class="field" for="max-price">
+                    <span>Максимальная цена</span>
+                    <input
+                        id="max-price"
+                        name="max_price"
+                        type="number"
+                        min="0"
+                        step="1000"
+                        inputmode="numeric"
+                        value="{{ default_max_price }}"
+                    >
+                </label>
+
+                <div class="actions">
+                    <button class="primary-button" id="search-button" type="submit">Найти квартиры</button>
+                    <button class="secondary-button" type="reset">Сбросить</button>
+                </div>
+
+                <label class="check-row coordinate-toggle" for="show-unverified">
+                    <input id="show-unverified" name="show_unverified" type="checkbox" checked>
+                    <span>Показывать объявления без подтверждённых координат</span>
+                </label>
+            </form>
+
+            <div class="draw-status" data-draw-status aria-live="polite">
+                Зона поиска не выбрана.
+            </div>
+
+            <ol class="search-progress" data-search-progress hidden aria-live="polite">
+                <li data-progress-step="source">Источник ожидает запуска</li>
+                <li data-progress-step="received">Карточки ещё не получены</li>
+                <li data-progress-step="filtered">Фильтры ещё не применены</li>
+                <li data-progress-step="completed">Поиск ещё не завершён</li>
+            </ol>
+        </aside>
+
+        <section class="map-panel" aria-label="Карта Москвы">
+            <div id="map"></div>
+        </section>
+    </main>
+
+    <section class="search-results" data-search-results hidden aria-live="polite" aria-labelledby="results-title">
+        <div class="search-results-inner">
+            <div class="results-heading">
+                <div>
+                    <h2 id="results-title">Найденные объявления</h2>
+                    <p data-found-count></p>
+                </div>
+                <div class="export-actions" aria-label="Экспорт результатов">
+                    <button class="secondary-button" data-export="excel" type="button" disabled>Скачать Excel</button>
+                    <button class="secondary-button" data-export="html" type="button" disabled>Скачать HTML</button>
+                </div>
+            </div>
+
+            <div class="results-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Цена</th>
+                            <th scope="col">Тип</th>
+                            <th scope="col">Площадь</th>
+                            <th scope="col">Метро</th>
+                            <th scope="col">До метро</th>
+                            <th scope="col">Адрес</th>
+                            <th scope="col">Статус попадания в область</th>
+                            <th scope="col">Источник</th>
+                            <th scope="col">Объявление</th>
+                        </tr>
+                    </thead>
+                    <tbody data-listings-body></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""
+    ></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+    <script src="{{ url_for('static', path='/js/app.js') }}"></script>
+</body>
+</html>
