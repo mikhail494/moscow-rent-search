@@ -1,25 +1,171 @@
+[English](#english) | [Русский](#russian)
+
+<a id="english"></a>
+
 # Moscow Rent Search
 
-Локальное веб-приложение для отбора объявлений об аренде квартир в Москве по
-нарисованной на карте области, параметрам жилья и цене. Результаты можно
-просмотреть в таблице и выгрузить в Excel или автономный HTML-файл.
+## Project description
+
+Moscow Rent Search is a local web application for filtering long-term rental
+listings in Moscow. Draw a search area on the map, set property and price
+filters, review matching listings, and export the current results.
+
+## Technology stack
+
+- Python
+- FastAPI
+- Pydantic
+- Jinja2
+- Leaflet
+- OpenStreetMap
+- OpenPyXL
+- Pytest
+
+## Features
+
+- Draw an arbitrary search polygon on a Moscow map.
+- Filter by property type, area, and maximum rent price.
+- Check listing coordinates against the drawn polygon locally.
+- Keep listings without coordinates and mark their location as unverified.
+- Sort verified in-area listings and unverified listings by price.
+- Export the current filtered results to Excel and a standalone HTML file.
+
+## Current source status
+
+- **Test data:** fully working. It provides built-in listings for checking the
+  interface and filtering.
+- **CIAN:** experimental. Live public access may return Smart CAPTCHA, so real
+  listings are not guaranteed.
+- **Yandex Realty:** experimental. Live requests may return SSR or meta-refresh
+  pages without listing cards, so real listings are not guaranteed.
+
+## Project structure
+
+```text
+app/
+  main.py                 FastAPI application and HTTP endpoints
+  models/                 Listing model
+  services/               Search, filtering, and export services
+  sources/                Test, CIAN, and Yandex Realty adapters
+  static/                 CSS and JavaScript assets
+  templates/              Jinja2 templates
+tests/
+  fixtures/               Saved HTML fixtures for parser tests
+  test_*.py               Automated tests
+requirements.txt          Application and test dependencies
+run.ps1                   Windows launch script
+```
+
+## Requirements
+
+- Windows 10/11 with PowerShell.
+- Python 3.10 or newer, available as `python` or through the Python Launcher
+  (`py`).
+- Internet access for the first dependency installation, the map, and live
+  source requests.
+
+## Installation and launch
+
+Open PowerShell in the project directory and run:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\run.ps1
+```
+
+`run.ps1` creates `.venv` when it is missing, installs required dependencies,
+selects the next free port when needed, and prints the local URL. To start from
+a different preferred port:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\run.ps1 -Port 8004
+```
+
+Stop the server with `Ctrl+C` in the same PowerShell window.
+
+## Usage
+
+1. Select a source and configure the property type, area, and price filters.
+2. Draw the search area on the map.
+3. Click the search button.
+4. Review the result table and optionally hide listings with unverified
+   locations.
+
+## Export
+
+After a search returns listings, download the current filtered table as Excel
+or standalone HTML. Files are created in `output/` and include the creation
+date and time in their names. The Excel file includes formatted headers,
+filters, a frozen first row, and clickable links; the HTML file opens without
+the local server.
+
+## Supported sources
+
+- Test data
+- CIAN (experimental)
+- Yandex Realty (experimental)
+
+## Known limitations
+
+- The application does not bypass CAPTCHA, use proxies, authorization, cookies,
+  or private APIs.
+- External websites can block requests, change their HTML, or load listings
+  only with JavaScript after the page opens.
+- Listings without coordinates remain in the results, but their location is not
+  verified and polygon filtering cannot confirm them.
+- Last-search results are stored only in the current process memory and are
+  lost after the application restarts.
+- Leaflet and OpenStreetMap resources require an internet connection.
+
+## Tests
+
+Run the automated tests after dependencies are installed:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest
+```
+
+<a id="russian"></a>
+
+# Moscow Rent Search
+
+## Описание проекта
+
+Moscow Rent Search — локальное веб-приложение для отбора объявлений о
+долгосрочной аренде жилья в Москве. Пользователь рисует область поиска на
+карте, задаёт фильтры по жилью и цене, просматривает подходящие объявления и
+экспортирует текущие результаты.
+
+## Технологический стек
+
+- Python
+- FastAPI
+- Pydantic
+- Jinja2
+- Leaflet
+- OpenStreetMap
+- OpenPyXL
+- Pytest
 
 ## Возможности
 
-- Рисование произвольной области поиска на карте Москвы.
-- Фильтрация по типу жилья, площади и максимальной цене.
-- Поиск по тестовым данным, ЦИАН и Яндекс Недвижимости.
-- Локальная проверка попадания координат объявления в выбранный полигон.
-- Отображение неподтвержденных местоположений без исключения их из выдачи.
-- Сортировка результатов по подтвержденному местоположению и цене.
-- Экспорт текущей отфильтрованной выдачи в `.xlsx` и автономный `.html`.
+- Рисование произвольного полигона поиска на карте Москвы.
+- Фильтрация по типу жилья, площади и максимальной цене аренды.
+- Локальная проверка попадания координат объявления в нарисованный полигон.
+- Сохранение объявлений без координат с отметкой о неподтверждённом
+  местоположении.
+- Сортировка подтверждённых объявлений внутри области и неподтверждённых
+  объявлений по цене.
+- Экспорт текущих отфильтрованных результатов в Excel и автономный HTML-файл.
 
-## Ограничения
+## Текущий статус источников
 
-Приложение не обходит CAPTCHA, не использует прокси, авторизацию, cookies или
-приватные API. Для внешних источников выполняются только обычные публичные
-запросы; при блокировке, CAPTCHA, изменении разметки или сетевой ошибке поиск
-возвращает понятный статус без повторных агрессивных запросов.
+- **Тестовые данные:** полностью работают. Это встроенный набор объявлений для
+  проверки интерфейса и фильтрации.
+- **ЦИАН:** экспериментальный источник. При живом публичном запросе может быть
+  показана Smart CAPTCHA, поэтому получение реальных объявлений не гарантировано.
+- **Яндекс Недвижимость:** экспериментальный источник. Живой запрос может
+  вернуть SSR-страницу или страницу с meta refresh без карточек объявлений,
+  поэтому получение реальных объявлений не гарантировано.
 
 ## Структура проекта
 
@@ -30,12 +176,12 @@ app/
   services/               Поиск, фильтрация и экспорт
   sources/                Адаптеры test, CIAN и Yandex Realty
   static/                 CSS и JavaScript интерфейса
-  templates/              Jinja2-шаблоны страниц
+  templates/              Jinja2-шаблоны
 tests/
-  fixtures/               HTML-fixtures для тестов парсеров
+  fixtures/               Сохранённые HTML-fixtures для тестов парсеров
   test_*.py               Автоматические тесты
 requirements.txt          Зависимости приложения и тестов
-run.ps1                   Удобный запуск для Windows
+run.ps1                   Скрипт запуска для Windows
 ```
 
 ## Требования
@@ -43,74 +189,64 @@ run.ps1                   Удобный запуск для Windows
 - Windows 10/11 с PowerShell.
 - Python 3.10 или новее, доступный как `python` или через Python Launcher
   (`py`).
-- Подключение к интернету для карты, Leaflet и реальных источников.
+- Подключение к интернету для первой установки зависимостей, карты и живых
+  запросов к источникам.
 
-## Установка
+## Установка и запуск
 
-Клонируйте или распакуйте проект и в PowerShell перейдите в его каталог.
-Первый запуск сам создаст `.venv` и установит зависимости:
+Откройте PowerShell в каталоге проекта и выполните:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\run.ps1
 ```
 
-## Запуск
-
-По умолчанию приложение запускается на `http://127.0.0.1:8000`. Если этот
-порт занят, скрипт автоматически выберет следующий свободный и выведет точную
-ссылку в консоль.
-
-Чтобы начать с другого номера порта:
+`run.ps1` создаёт `.venv`, если окружение отсутствует, устанавливает нужные
+зависимости, выбирает следующий свободный порт при необходимости и выводит
+локальный URL. Чтобы начать с другого предпочтительного порта:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\run.ps1 -Port 8004
 ```
 
-Остановить сервер можно сочетанием `Ctrl+C` в том же окне PowerShell.
-Если выполнение локальных скриптов уже разрешено, можно использовать короткую
-форму `.\run.ps1`.
+Чтобы остановить сервер, нажмите `Ctrl+C` в том же окне PowerShell.
 
 ## Использование
 
-1. Выберите источник данных.
-2. Отметьте тип жилья и задайте площадь и максимальную цену.
-3. Нарисуйте область поиска на карте.
-4. Нажмите «Найти квартиры».
-5. Просмотрите таблицу и при необходимости включите или выключите показ
-   объявлений без подтвержденных координат.
+1. Выберите источник и задайте тип жилья, площадь и максимальную цену.
+2. Нарисуйте область поиска на карте.
+3. Нажмите кнопку поиска.
+4. Просмотрите таблицу результатов и при необходимости скройте объявления с
+   неподтверждённым местоположением.
 
 ## Экспорт
 
-После успешного поиска становятся доступны кнопки скачивания Excel и HTML.
-Экспортируется только текущая отфильтрованная выдача, показанная в таблице.
-Созданные файлы сохраняются в `output/` с датой и временем в имени.
-
-Excel содержит форматированные заголовки, фильтр, закрепленную первую строку и
-кликабельные ссылки. HTML-файл самодостаточен и открывается в браузере без
-запущенного приложения.
+После успешного поиска можно скачать текущую отфильтрованную таблицу в Excel
+или автономный HTML. Файлы создаются в `output/`; в имени указаны дата и время
+создания. Excel содержит форматированные заголовки, фильтры, закреплённую
+первую строку и кликабельные ссылки. HTML открывается без запущенного
+локального сервера.
 
 ## Поддерживаемые источники
 
-- **Тестовые данные**: встроенный набор объявлений для проверки интерфейса и
-  фильтрации.
-- **ЦИАН**: экспериментальный публичный адаптер.
-- **Яндекс Недвижимость**: экспериментальный публичный адаптер.
+- Тестовые данные
+- ЦИАН (экспериментальный)
+- Яндекс Недвижимость (экспериментальный)
 
 ## Известные ограничения
 
-- ЦИАН и Яндекс Недвижимость могут показать CAPTCHA, ограничить доступ или
-  изменить HTML-структуру. В этих случаях живые карточки не будут получены.
-- Сайты могут загружать объявления JavaScript-ом после открытия страницы;
-  обычный HTTP-парсер не получает такие карточки.
-- Объявления без координат сохраняются в результатах, но их положение на карте
-  не подтверждено.
-- Полигон применяется локально только к карточкам с доступными координатами.
+- Приложение не обходит CAPTCHA, не использует прокси, авторизацию, cookies
+  или приватные API.
+- Внешние сайты могут блокировать запросы, менять HTML или загружать карточки
+  только JavaScript-ом после открытия страницы.
+- Объявления без координат остаются в результатах, но их местоположение не
+  подтверждено и не может быть проверено полигоном.
 - Результаты последнего поиска хранятся только в памяти текущего процесса и
   исчезают после перезапуска приложения.
-- Карта использует внешние Leaflet и OpenStreetMap, поэтому для нее требуется
-  интернет-соединение.
+- Leaflet и OpenStreetMap требуют интернет-соединения.
 
-## Проверка
+## Тесты
+
+После установки зависимостей выполните:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest
