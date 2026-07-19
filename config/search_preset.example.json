@@ -1,0 +1,16 @@
+{
+  "polygon": null,
+  "property_types": ["studio", "one_room"],
+  "min_area": 20,
+  "max_area": 50,
+  "max_price": 90000,
+  "include_unverified_locations": true,
+  "location_filter_mode": "metro",
+  "allowed_metro_stations": [
+    "Example Station A",
+    "Example Station B"
+  ],
+  "max_metro_minutes": 20,
+  "enabled_sources": ["cian", "yandex_realty"],
+  "output_directory": "output/saved-search"
+}

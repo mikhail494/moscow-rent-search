@@ -4,4 +4,23 @@ __pycache__/
 .pytest_cache/
 output/
 debug/
+data/browser_profile/
 *.pyc
+*.local.json
+*.private.json
+screenshots/
+*screenshot*.png
+config/*
+!config/search_preset.example.json
+!config/source_search.example.json
+app/services/mom_search.py
+app/services/mom_runner.py
+app/services/cian_mom_search.py
+app/services/cian_setup.py
+app/services/local_compat.py
+tests/test_mom_search.py
+tests/test_mom_runner.py
+tests/test_cian_setup.py
+tests/test_browser_source_runner.py
+Поиск квартир для мамы.cmd
+Настроить ЦИАН для мамы.cmd

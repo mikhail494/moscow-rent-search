@@ -18,6 +18,8 @@ class SourceSearchParams:
     max_area: float | None
     max_price: int
     polygon: Sequence[tuple[float, float]]
+    metro_stations: Sequence[str] = ()
+    cian_search_url: str | None = None
 
 
 class SourceSearchResult(BaseModel):

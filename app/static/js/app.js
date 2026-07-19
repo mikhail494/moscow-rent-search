@@ -4,6 +4,7 @@
     const maxPriceInput = document.querySelector("#max-price");
     const filtersForm = document.querySelector("#filters-form");
     const searchButton = document.querySelector("#search-button");
+    const saveSavedSearchButton = document.querySelector("#save-saved-search-button");
     const resultsSection = document.querySelector("[data-search-results]");
     const foundCount = document.querySelector("[data-found-count]");
     const listingsBody = document.querySelector("[data-listings-body]");
@@ -65,6 +66,47 @@
     });
 
     map.addControl(drawControl);
+
+    function applySavedSearchConfig(config) {
+        if (!config?.polygon || config.polygon.geometry?.type !== "Polygon") {
+            return;
+        }
+
+        document.querySelectorAll('input[name="flat_type"]').forEach((input) => {
+            input.checked = config.property_types?.includes(input.value) || false;
+        });
+
+        for (const [selector, value] of [
+            ["#min-area", config.min_area],
+            ["#max-area", config.max_area],
+            ["#max-price", config.max_price],
+        ]) {
+            const input = document.querySelector(selector);
+            if (input && value !== null && value !== undefined) {
+                input.value = value;
+            }
+        }
+
+        if (showUnverifiedInput && typeof config.include_unverified_locations === "boolean") {
+            showUnverifiedInput.checked = config.include_unverified_locations;
+        }
+
+        const savedArea = L.geoJSON(config.polygon);
+        const savedLayers = savedArea.getLayers();
+        if (savedLayers.length === 0) {
+            return;
+        }
+
+        drawnItems.clearLayers();
+        savedLayers.forEach((layer) => drawnItems.addLayer(layer));
+        map.fitBounds(savedArea.getBounds(), { padding: [24, 24] });
+        status?.classList.remove("is-error");
+        if (status) {
+            status.textContent = "Сохранённый район поиска загружен.";
+        }
+    }
+
+    applySavedSearchConfig(window.savedSearchConfig);
 
     map.on(L.Draw.Event.CREATED, (event) => {
         drawnItems.clearLayers();
@@ -189,6 +231,16 @@
         }
         searchButton.disabled = isSearching;
         searchButton.textContent = isSearching ? "Идёт поиск" : "Найти квартиры";
+    }
+
+    function setSavingSavedSearch(isSaving) {
+        if (!saveSavedSearchButton) {
+            return;
+        }
+        saveSavedSearchButton.disabled = isSaving;
+        saveSavedSearchButton.textContent = isSaving
+            ? "Сохранение..."
+            : "Сохранить поиск";
     }
 
     function compareListings(first, second) {
@@ -319,6 +371,56 @@
             showProgressError(errorMessage);
         } finally {
             setSearching(false);
+        }
+    });
+
+    saveSavedSearchButton?.addEventListener("click", async () => {
+        clearError();
+        const [searchArea] = drawnItems.getLayers();
+        if (!searchArea) {
+            showError("Сначала нарисуйте район поиска.");
+            return;
+        }
+
+        const polygon = searchArea.toGeoJSON();
+        if (polygon.geometry.type !== "Polygon") {
+            showError("Выберите область в форме полигона или прямоугольника.");
+            return;
+        }
+
+        const payload = {
+            polygon,
+            property_types: Array.from(
+                document.querySelectorAll('input[name="flat_type"]:checked'),
+                (input) => input.value,
+            ),
+            min_area: getNumberValue("#min-area"),
+            max_area: getNumberValue("#max-area"),
+            max_price: getNumberValue("#max-price"),
+            include_unverified_locations: showUnverifiedInput?.checked || false,
+        };
+
+        setSavingSavedSearch(true);
+        try {
+            const response = await fetch("/api/saved-search", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                const message = data.detail?.[0]?.msg || "Не удалось сохранить поиск.";
+                showError(message);
+                return;
+            }
+
+            if (status) {
+                status.textContent = "Поиск сохранён.";
+            }
+        } catch (error) {
+            showError("Не удалось сохранить поиск.");
+        } finally {
+            setSavingSavedSearch(false);
         }
     });
 

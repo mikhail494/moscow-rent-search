@@ -81,6 +81,7 @@
                 <div class="actions">
                     <button class="primary-button" id="search-button" type="submit">Найти квартиры</button>
                     <button class="secondary-button" type="reset">Сбросить</button>
+                    <button class="secondary-button saved-search-button" id="save-saved-search-button" type="button">Сохранить поиск</button>
                 </div>
 
                 <label class="check-row coordinate-toggle" for="show-unverified">
@@ -146,6 +147,9 @@
         crossorigin=""
     ></script>
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+    <script>
+        window.savedSearchConfig = {{ saved_search_config | tojson }};
+    </script>
     <script src="{{ url_for('static', path='/js/app.js') }}"></script>
 </body>
 </html>

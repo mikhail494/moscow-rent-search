@@ -6,7 +6,7 @@ from app.sources.base import SourceSearchParams
 
 
 class FilteringTests(unittest.TestCase):
-    def test_keeps_inside_and_unverified_listings_in_display_order(self) -> None:
+    def test_regular_web_polygon_filter_keeps_inside_and_unverified_listings_in_display_order(self) -> None:
         listings = [
             Listing(
                 source="test",

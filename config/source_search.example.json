@@ -1,0 +1,9 @@
+{
+  "search_url": "https://example.com/configure-your-public-search-url",
+  "created_at": null,
+  "expected_stations": [
+    "Example Station A",
+    "Example Station B"
+  ],
+  "max_metro_minutes": 20
+}

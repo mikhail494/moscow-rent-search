@@ -211,6 +211,10 @@ h1 {
     background: var(--primary-hover);
 }
 
+.saved-search-button {
+    grid-column: 1 / -1;
+}
+
 .primary-button:disabled {
     cursor: wait;
     opacity: 0.72;

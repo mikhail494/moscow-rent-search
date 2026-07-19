@@ -2,252 +2,174 @@
 
 <a id="english"></a>
 
-# Moscow Rent Search
+# Rental Search Automation
 
-## Project description
-
-Moscow Rent Search is a local web application for filtering long-term rental
-listings in Moscow. Draw a search area on the map, set property and price
-filters, review matching listings, and export the current results.
-
-## Technology stack
-
-- Python
-- FastAPI
-- Pydantic
-- Jinja2
-- Leaflet
-- OpenStreetMap
-- OpenPyXL
-- Pytest
+Rental Search Automation is a configurable browser-assisted workflow for collecting, normalizing, filtering and exporting long-term rental listings.
 
 ## Features
 
-- Draw an arbitrary search polygon on a Moscow map.
-- Filter by property type, area, and maximum rent price.
-- Check listing coordinates against the drawn polygon locally.
-- Keep listings without coordinates and mark their location as unverified.
-- Sort verified in-area listings and unverified listings by price.
-- Export the current filtered results to Excel and a standalone HTML file.
+- Browser-assisted acquisition with persistent local browser sessions.
+- Manually assisted login or CAPTCHA interaction when a site requires it. No CAPTCHA bypass is performed.
+- Source adapters, multi-page extraction, normalization and monthly-rent validation.
+- Filters for price, property type, area, metro station and walking time.
+- Deduplication and resilient reporting when one source fails.
+- Mobile-friendly standalone HTML reports and Excel export where supported.
+- Automated unit tests with fixtures and mocks.
 
-## Current source status
-
-- **Test data:** fully working. It provides built-in listings for checking the
-  interface and filtering.
-- **CIAN:** experimental. Live public access may return Smart CAPTCHA, so real
-  listings are not guaranteed.
-- **Yandex Realty:** experimental. Live requests may return SSR or meta-refresh
-  pages without listing cards, so real listings are not guaranteed.
-
-## Project structure
+## Architecture
 
 ```text
-app/
-  main.py                 FastAPI application and HTTP endpoints
-  models/                 Listing model
-  services/               Search, filtering, and export services
-  sources/                Test, CIAN, and Yandex Realty adapters
-  static/                 CSS and JavaScript assets
-  templates/              Jinja2 templates
-tests/
-  fixtures/               Saved HTML fixtures for parser tests
-  test_*.py               Automated tests
-requirements.txt          Application and test dependencies
-run.ps1                   Windows launch script
+app/services/saved_search.py       saved-search configuration helpers
+app/services/source_search.py      source-specific search configuration helpers
+app/services/preset_runner.py      generic CLI and report workflow
+app/services/browser_source_runner.py  browser-assisted source execution
+app/sources/                       source adapters
+config/*.example.json              safe public configuration examples
+Run Saved Search.cmd               Windows launcher
 ```
 
-## Requirements
+## Installation
 
-- Windows 10/11 with PowerShell.
-- Python 3.10 or newer, available as `python` or through the Python Launcher
-  (`py`).
-- Internet access for the first dependency installation, the map, and live
-  source requests.
-
-## Installation and launch
-
-Open PowerShell in the project directory and run:
+Requirements: Python 3.10+, Windows PowerShell for the launcher, and internet access for dependency installation, map tiles and live source access.
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\run.ps1
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m playwright install chromium
 ```
 
-`run.ps1` creates `.venv` when it is missing, installs required dependencies,
-selects the next free port when needed, and prints the local URL. To start from
-a different preferred port:
+## Configuration
+
+Copy the public examples locally and edit the copies. Local configurations are ignored by Git.
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\run.ps1 -Port 8004
+Copy-Item config\search_preset.example.json config\search_preset.json
+Copy-Item config\source_search.example.json config\source_search.json
 ```
 
-Stop the server with `Ctrl+C` in the same PowerShell window.
+`search_preset.json` defines property filters, a location-filter mode, stations, walking time, enabled sources and the output directory. `source_search.json` is an optional source-specific public URL configured by the user. Example files contain fictional data only.
 
 ## Usage
 
-1. Select a source and configure the property type, area, and price filters.
-2. Draw the search area on the map.
-3. Click the search button.
-4. Review the result table and optionally hide listings with unverified
-   locations.
-
-## Export
-
-After a search returns listings, download the current filtered table as Excel
-or standalone HTML. Files are created in `output/` and include the creation
-date and time in their names. The Excel file includes formatted headers,
-filters, a frozen first row, and clickable links; the HTML file opens without
-the local server.
-
-## Supported sources
-
-- Test data
-- CIAN (experimental)
-- Yandex Realty (experimental)
-
-## Known limitations
-
-- The application does not bypass CAPTCHA, use proxies, authorization, cookies,
-  or private APIs.
-- External websites can block requests, change their HTML, or load listings
-  only with JavaScript after the page opens.
-- Listings without coordinates remain in the results, but their location is not
-  verified and polygon filtering cannot confirm them.
-- Last-search results are stored only in the current process memory and are
-  lost after the application restarts.
-- Leaflet and OpenStreetMap resources require an internet connection.
-
-## Tests
-
-Run the automated tests after dependencies are installed:
+Run the generic CLI:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest
+.\.venv\Scripts\python.exe -m app.services.preset_runner --config config\search_preset.json
 ```
 
-<a id="russian"></a>
+On Windows, double-click [Run Saved Search.cmd](Run%20Saved%20Search.cmd). It creates or uses `.venv`, installs missing dependencies, installs Playwright Chromium when needed, verifies that the local preset exists, and runs the generic workflow. It pauses only after an error.
 
-# Moscow Rent Search
-
-## Описание проекта
-
-Moscow Rent Search — локальное веб-приложение для отбора объявлений о
-долгосрочной аренде жилья в Москве. Пользователь рисует область поиска на
-карте, задаёт фильтры по жилью и цене, просматривает подходящие объявления и
-экспортирует текущие результаты.
-
-## Технологический стек
-
-- Python
-- FastAPI
-- Pydantic
-- Jinja2
-- Leaflet
-- OpenStreetMap
-- OpenPyXL
-- Pytest
-
-## Возможности
-
-- Рисование произвольного полигона поиска на карте Москвы.
-- Фильтрация по типу жилья, площади и максимальной цене аренды.
-- Локальная проверка попадания координат объявления в нарисованный полигон.
-- Сохранение объявлений без координат с отметкой о неподтверждённом
-  местоположении.
-- Сортировка подтверждённых объявлений внутри области и неподтверждённых
-  объявлений по цене.
-- Экспорт текущих отфильтрованных результатов в Excel и автономный HTML-файл.
-
-## Текущий статус источников
-
-- **Тестовые данные:** полностью работают. Это встроенный набор объявлений для
-  проверки интерфейса и фильтрации.
-- **ЦИАН:** экспериментальный источник. При живом публичном запросе может быть
-  показана Smart CAPTCHA, поэтому получение реальных объявлений не гарантировано.
-- **Яндекс Недвижимость:** экспериментальный источник. Живой запрос может
-  вернуть SSR-страницу или страницу с meta refresh без карточек объявлений,
-  поэтому получение реальных объявлений не гарантировано.
-
-## Структура проекта
-
-```text
-app/
-  main.py                 FastAPI-приложение и HTTP-эндпоинты
-  models/                 Модель объявления
-  services/               Поиск, фильтрация и экспорт
-  sources/                Адаптеры test, CIAN и Yandex Realty
-  static/                 CSS и JavaScript интерфейса
-  templates/              Jinja2-шаблоны
-tests/
-  fixtures/               Сохранённые HTML-fixtures для тестов парсеров
-  test_*.py               Автоматические тесты
-requirements.txt          Зависимости приложения и тестов
-run.ps1                   Скрипт запуска для Windows
-```
-
-## Требования
-
-- Windows 10/11 с PowerShell.
-- Python 3.10 или новее, доступный как `python` или через Python Launcher
-  (`py`).
-- Подключение к интернету для первой установки зависимостей, карты и живых
-  запросов к источникам.
-
-## Установка и запуск
-
-Откройте PowerShell в каталоге проекта и выполните:
+The FastAPI interface remains available through:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\run.ps1
 ```
 
-`run.ps1` создаёт `.venv`, если окружение отсутствует, устанавливает нужные
-зависимости, выбирает следующий свободный порт при необходимости и выводит
-локальный URL. Чтобы начать с другого предпочтительного порта:
+## Sources
 
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\run.ps1 -Port 8004
-```
+- **CIAN:** browser-assisted and experimental. External site changes, CAPTCHA, access restrictions or manual interaction can prevent extraction.
+- **Yandex Realty:** experimental. Live pages may not expose listing cards and can return a parse error.
 
-Чтобы остановить сервер, нажмите `Ctrl+C` в том же окне PowerShell.
+## Privacy And Security
 
-## Использование
+- Configure your own saved searches locally; do not commit local configuration files.
+- Browser profile data, generated reports, debug output, screenshots and local JSON overrides are ignored by Git.
+- Source code stores no credentials, cookies, authorization headers or browser-profile data.
+- Public examples never include a calibrated live URL or live listings.
 
-1. Выберите источник и задайте тип жилья, площадь и максимальную цену.
-2. Нарисуйте область поиска на карте.
-3. Нажмите кнопку поиска.
-4. Просмотрите таблицу результатов и при необходимости скройте объявления с
-   неподтверждённым местоположением.
-
-## Экспорт
-
-После успешного поиска можно скачать текущую отфильтрованную таблицу в Excel
-или автономный HTML. Файлы создаются в `output/`; в имени указаны дата и время
-создания. Excel содержит форматированные заголовки, фильтры, закреплённую
-первую строку и кликабельные ссылки. HTML открывается без запущенного
-локального сервера.
-
-## Поддерживаемые источники
-
-- Тестовые данные
-- ЦИАН (экспериментальный)
-- Яндекс Недвижимость (экспериментальный)
-
-## Известные ограничения
-
-- Приложение не обходит CAPTCHA, не использует прокси, авторизацию, cookies
-  или приватные API.
-- Внешние сайты могут блокировать запросы, менять HTML или загружать карточки
-  только JavaScript-ом после открытия страницы.
-- Объявления без координат остаются в результатах, но их местоположение не
-  подтверждено и не может быть проверено полигоном.
-- Результаты последнего поиска хранятся только в памяти текущего процесса и
-  исчезают после перезапуска приложения.
-- Leaflet и OpenStreetMap требуют интернет-соединения.
-
-## Тесты
-
-После установки зависимостей выполните:
+## Tests
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest
 ```
+
+## Limitations
+
+External sites can change without notice. Browser-assisted extraction may require manual interaction, and a source can fail independently without stopping the report from other sources. The workflow does not use proxies, private APIs or CAPTCHA bypasses.
+
+<a id="russian"></a>
+
+# Rental Search Automation
+
+Rental Search Automation — настраиваемый browser-assisted workflow для сбора, нормализации, фильтрации и экспорта объявлений о долгосрочной аренде.
+
+## Возможности
+
+- Получение данных через браузер с постоянной локальной сессией.
+- Ручное участие при логине или CAPTCHA. Обход CAPTCHA не выполняется.
+- Адаптеры источников, обход нескольких страниц, нормализация и проверка месячной ставки.
+- Фильтры по цене, типу жилья, площади, станции метро и времени пешком.
+- Дедупликация и устойчивый отчёт, когда один источник недоступен.
+- Автономный HTML-отчёт для мобильного просмотра и экспорт Excel, где он поддерживается.
+- Автоматические unit-тесты с fixtures и mocks.
+
+## Архитектура
+
+```text
+app/services/saved_search.py       работа с сохранённой конфигурацией
+app/services/source_search.py      конфигурация поиска для источника
+app/services/preset_runner.py      generic CLI и генерация отчёта
+app/services/browser_source_runner.py  browser-assisted выполнение источников
+app/sources/                       адаптеры источников
+config/*.example.json              безопасные публичные примеры
+Run Saved Search.cmd               launcher для Windows
+```
+
+## Установка
+
+Нужны Python 3.10+, PowerShell в Windows для launcher и интернет для установки зависимостей, карт и живых обращений к источникам.
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m playwright install chromium
+```
+
+## Настройка
+
+Скопируйте публичные примеры локально и отредактируйте копии. Локальные конфигурации исключены из Git.
+
+```powershell
+Copy-Item config\search_preset.example.json config\search_preset.json
+Copy-Item config\source_search.example.json config\source_search.json
+```
+
+`search_preset.json` содержит фильтры жилья, режим фильтрации местоположения, станции, время пешком, источники и папку вывода. `source_search.json` при необходимости содержит публичный URL, настроенный самим пользователем. В примерах только вымышленные данные.
+
+## Использование
+
+Запустите generic CLI:
+
+```powershell
+.\.venv\Scripts\python.exe -m app.services.preset_runner --config config\search_preset.json
+```
+
+В Windows можно открыть [Run Saved Search.cmd](Run%20Saved%20Search.cmd). Launcher создаёт или использует `.venv`, устанавливает отсутствующие зависимости, при необходимости ставит Playwright Chromium, проверяет наличие локальной конфигурации и запускает workflow. При успешном запуске консоль не задерживается.
+
+Веб-интерфейс FastAPI запускается так:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\run.ps1
+```
+
+## Источники
+
+- **CIAN:** browser-assisted и экспериментальный источник. Изменения сайта, CAPTCHA, ограничения доступа или необходимость ручного действия могут помешать извлечению.
+- **Яндекс Недвижимость:** экспериментальный источник. Живые страницы могут не содержать доступных карточек и вернуть ошибку разбора.
+
+## Конфиденциальность И Безопасность
+
+- Настраивайте собственные сохранённые поиски локально и не добавляйте их в Git.
+- Профиль браузера, готовые отчёты, debug-данные, скриншоты и локальные JSON-замены игнорируются Git.
+- В исходном коде не хранятся учётные данные, cookies, заголовки авторизации или данные профиля браузера.
+- Публичные примеры не содержат калиброванный живой URL или реальные объявления.
+
+## Тесты
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest
+```
+
+## Ограничения
+
+Внешние сайты могут измениться без предупреждения. Browser-assisted извлечение иногда требует ручного действия, а один источник может не сработать независимо от остальных. Workflow не использует прокси, приватные API и обход CAPTCHA.

@@ -15,6 +15,10 @@ from app.services.export import (
     create_excel_export,
     create_html_export,
 )
+from app.services.saved_search import (
+    load_saved_search_config,
+    save_saved_search_config,
+)
 from app.sources.base import SourceSearchParams, SourceStatus
 from app.sources.cian import CianSource
 from app.sources.test import TestSource
@@ -23,8 +27,18 @@ from app.sources.yandex_realty import YandexRealtySource
 
 BASE_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = BASE_DIR.parent / "output"
+SAVED_SEARCH_CONFIG_PATH = BASE_DIR.parent / "config" / "search_preset.json"
 
-app = FastAPI(title="Moscow Rent Search")
+try:
+    from app.services.local_compat import load_local_preset, save_local_preset
+except ModuleNotFoundError:
+    def load_local_preset() -> dict[str, object]:
+        return load_saved_search_config(SAVED_SEARCH_CONFIG_PATH)
+
+    def save_local_preset(preset: dict[str, object]) -> dict[str, object]:
+        return save_saved_search_config(SAVED_SEARCH_CONFIG_PATH, preset)
+
+app = FastAPI(title="Rental Search Automation")
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 app.state.last_search_for_export: ExportSearch | None = None
 
@@ -104,6 +118,36 @@ class SearchResponse(BaseModel):
     error: str | None = None
 
 
+class SavedSearchSaveRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    polygon: PolygonFeature
+    property_types: list[Literal["studio", "one_room"]] = Field(min_length=1)
+    min_area: float | None = Field(default=None, ge=0)
+    max_area: float | None = Field(default=None, ge=0)
+    max_price: int = Field(gt=0)
+    include_unverified_locations: bool
+
+    @field_validator("property_types")
+    @classmethod
+    def validate_property_types(
+        cls, property_types: list[Literal["studio", "one_room"]]
+    ) -> list[Literal["studio", "one_room"]]:
+        if len(set(property_types)) != len(property_types):
+            raise ValueError("Property types must not repeat.")
+        return property_types
+
+    @model_validator(mode="after")
+    def validate_area_range(self) -> "SavedSearchSaveRequest":
+        if (
+            self.min_area is not None
+            and self.max_area is not None
+            and self.min_area > self.max_area
+        ):
+            raise ValueError("Minimum area cannot exceed maximum area.")
+        return self
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
@@ -112,6 +156,7 @@ async def index(request: Request) -> HTMLResponse:
         context={
             "request": request,
             "default_max_price": 90000,
+            "saved_search_config": load_local_preset(),
         },
     )
 
@@ -125,6 +170,8 @@ async def create_search(search_request: SearchRequest) -> SearchResponse:
         max_price=search_request.max_price,
         polygon=search_request.polygon.geometry.coordinates[0],
     )
+
+
     source_result = await SOURCES[search_request.source].search(params)
 
     if source_result.status == "ok" and source_result.listings:
@@ -147,6 +194,13 @@ async def create_search(search_request: SearchRequest) -> SearchResponse:
         listings=source_result.listings,
         error=source_result.error,
     )
+
+
+@app.post("/api/saved-search")
+async def save_saved_search(
+    saved_search_request: SavedSearchSaveRequest,
+) -> dict[str, object]:
+    return save_local_preset(saved_search_request.model_dump(mode="json"))
 
 
 @app.get("/api/export/excel")
